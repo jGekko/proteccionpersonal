@@ -6,63 +6,16 @@ import os
 import urllib.request
 from ultralytics import YOLO
 
-# Configuración de la página con fondo GIF
+# Configuración de la página
 st.set_page_config(page_title="Detección de EPP", layout="wide")
 
-# Añadir CSS para el fondo GIF
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-image: url("https://media.licdn.com/dms/image/v2/D5610AQEQGynBerz0qw/image-shrink_800/image-shrink_800/0/1713283207488?e=2147483647&v=beta&t=WQvr-qzbeq4uxBjoEp5WfJcv7FdLcAtodhDH8PZJObg");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }
-    
-    /* Fondo semitransparente para el contenido */
-    .st-emotion-cache-1y4p8pa, 
-    .st-emotion-cache-16txtl3,
-    .st-emotion-cache-1pxazr7,
-    .st-emotion-cache-1q7spjk {
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    /* Mejorar legibilidad del texto */
-    h1, h2, h3, h4, h5, h6, p, label, span {
-        color: #333333 !important;
-    }
-    
-    /* Ajustar imágenes de detección */
-    [data-testid=stImage] {
-        background-color: white;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Título de la aplicación con fondo semitransparente
-st.markdown(
-    """
-    <div style="background-color: rgba(255, 255, 255, 0.8); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-        <h1 style="color: #333333; text-align: center;">🚨 Sistema de Detección de Equipo de Protección Personal</h1>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Título de la aplicación
+st.title("🚨 Sistema de Detección de Equipo de Protección Personal")
 
 # Configuración del modelo
 MODEL_PATH = "model/best.pt"
 CLASS_NAMES = {0: "⛑️ Casco", 1: "👞 Zapatos", 2: "👤 Persona", 3: "🦺 Chaleco"}
-DISPLAY_WIDTH = 400  # Ancho de visualización sin perder calidad
+DISPLAY_WIDTH = 400 # Ancho de visualización sin perder calidad
 
 @st.cache_resource
 def load_model():
@@ -102,61 +55,91 @@ left_col, right_col = st.columns([1, 2])
 
 # Columna izquierda: Configuración
 with left_col:
-    with st.container():
-        st.header("⚙️ Configuración")
-        
-        option = st.radio("📷 Seleccione fuente de imagen:", 
-                         ("📤 Subir imagen", "📸 Usar cámara"),
-                         horizontal=True)
-        
-        st.subheader("🛡️ Elementos Requeridos")
-        required_classes = []
-        for class_id, class_name in CLASS_NAMES.items():
-            # No mostramos la opción de persona ya que siempre se detectará
-            if class_id != 2:  # 2 es el ID de persona
-                if st.checkbox(class_name, value=True, key=f"class_{class_id}"):
-                    required_classes.append(class_id)
+    st.header("⚙️ Configuración")
+    
+    option = st.radio("📷 Seleccione fuente de imagen:", 
+                     ("📤 Subir imagen", "📸 Usar cámara"),
+                     horizontal=True)
+    
+    st.subheader("🛡️ Elementos Requeridos")
+    required_classes = []
+    for class_id, class_name in CLASS_NAMES.items():
+        # No mostramos la opción de persona ya que siempre se detectará
+        if class_id != 2:  # 2 es el ID de persona
+            if st.checkbox(class_name, value=True, key=f"class_{class_id}"):
+                required_classes.append(class_id)
 
-        if option == "📤 Subir imagen":
-            uploaded_file = st.file_uploader("🖼️ Seleccione imagen:", type=["jpg", "jpeg", "png"])
-        else:
-            uploaded_file = None
-            picture = st.camera_input("📸 Tome una foto", key="camera_input")
+    if option == "📤 Subir imagen":
+        uploaded_file = st.file_uploader("🖼️ Seleccione imagen:", type=["jpg", "jpeg", "png"])
+    else:
+        uploaded_file = None
+        picture = st.camera_input("📸 Tome una foto", key="camera_input")
 
 # Columna derecha: Resultados
 with right_col:
-    with st.container():
-        st.header("🔍 Resultados del Análisis")
+    st.header("🔍 Resultados del Análisis")
+    
+    if (uploaded_file or (option == "📸 Usar cámara" and picture)) and model:
+        original_image = Image.open(uploaded_file if option == "📤 Subir imagen" else picture)
         
-        if (uploaded_file or (option == "📸 Usar cámara" and picture)) and model:
-            original_image = Image.open(uploaded_file if option == "📤 Subir imagen" else picture)
-            
-            detected_image, all_classes, req_detected = process_image(original_image)
-            
-            # Evaluación de cumplimiento
-            missing_classes = set(required_classes) - req_detected
-            if not missing_classes:
-                st.success("✅ **¡Cumple con todo el equipo requerido!**")
-            else:
-                missing_names = [CLASS_NAMES[c].split()[-1] for c in missing_classes]  # Remueve emoji para mostrar solo nombre
-                st.error(f"❌ **¡No apto! Faltan:** {', '.join(missing_names)}")
-            
-            # Mostrar imágenes con tamaño controlado manteniendo calidad
-            col1, col2 = st.columns(2)
-            with col1:
-                st.image(original_image, 
-                       caption="🖼️ Imagen Original",
-                       width=DISPLAY_WIDTH)
-            with col2:
-                st.image(detected_image,
-                       caption="🔎 Detecciones",
-                       width=DISPLAY_WIDTH)
-            
-            # Resumen de detecciones
-            with st.expander("📊 Detalles completos de detección"):
-                st.write(f"**📌 Total detectado:** {len(all_classes)} elementos")
-                st.write(f"**✅ Requeridos detectados:** {len(req_detected)} de {len(required_classes)}")
-                detected_items = [CLASS_NAMES[c] for c in all_classes if c in CLASS_NAMES]
-                st.write("**🔍 Items detectados:**", ", ".join(detected_items) if detected_items else "Ninguno")
+        detected_image, all_classes, req_detected = process_image(original_image)
+        
+        # Evaluación de cumplimiento
+        missing_classes = set(required_classes) - req_detected
+        if not missing_classes:
+            st.success("✅ **¡Cumple con todo el equipo requerido!**")
         else:
-            st.info("ℹ️ Configure los parámetros y cargue una imagen para realizar el análisis")
+            missing_names = [CLASS_NAMES[c].split()[-1] for c in missing_classes]  # Remueve emoji para mostrar solo nombre
+            st.error(f"❌ **¡No apto! Faltan:** {', '.join(missing_names)}")
+        
+        # Mostrar imágenes con tamaño controlado manteniendo calidad
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image(original_image, 
+                   caption="🖼️ Imagen Original",
+                   width=DISPLAY_WIDTH)
+        with col2:
+            st.image(detected_image,
+                   caption="🔎 Detecciones",
+                   width=DISPLAY_WIDTH)
+        
+        # Resumen de detecciones
+        with st.expander("📊 Detalles completos de detección"):
+            st.write(f"**📌 Total detectado:** {len(all_classes)} elementos")
+            st.write(f"**✅ Requeridos detectados:** {len(req_detected)} de {len(required_classes)}")
+            detected_items = [CLASS_NAMES[c] for c in all_classes if c in CLASS_NAMES]
+            st.write("**🔍 Items detectados:**", ", ".join(detected_items) if detected_items else "Ninguno")
+    else:
+        st.info("ℹ️ Configure los parámetros y cargue una imagen para realizar el análisis")
+
+# Estilos CSS mejorados
+st.markdown("""
+<style>
+    [data-testid=stImage] {
+        text-align: center;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border: 2px solid #f0f2f6;
+        transition: transform 0.2s;
+    }
+    [data-testid=stImage]:hover {
+        transform: scale(1.02);
+    }
+    .st-emotion-cache-16txtl3 {
+        padding: 2rem 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+    }
+    .stRadio > div {
+        display: flex;
+        gap: 10px;
+    }
+    .stRadio [role=radiogroup] {
+        gap: 8px;
+    }
+    .stCheckbox [data-baseweb=checkbox] {
+        margin-right: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
