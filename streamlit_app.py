@@ -62,106 +62,87 @@ option = st.radio("Fuente de imagen:", ("Subir imagen", "Usar cámara"), horizon
 # Contenedor para las imágenes
 col1, col2 = st.columns(2)
 
+def process_image(image):
+    """Procesa la imagen y devuelve resultados"""
+    # Convertir a formato OpenCV
+    image_cv = np.array(image)
+    image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
+    
+    # Realizar predicción
+    results = model.predict(image_cv, imgsz=640)
+    
+    # Mostrar todas las detecciones en la imagen analizada
+    all_detections = []
+    detected_classes = set()
+    required_detected = set()
+    
+    for r in results:
+        # Guardar todas las detecciones para mostrar
+        im_array = r.plot()  # imagen con todas las detecciones
+        all_detections.append(Image.fromarray(im_array[..., ::-1]))
+        
+        # Identificar qué clases requeridas fueron detectadas
+        for box in r.boxes:
+            class_id = int(box.cls[0].item())
+            detected_classes.add(class_id)
+            if class_id in required_classes:
+                required_detected.add(class_id)
+    
+    return all_detections[0], detected_classes, required_detected
+
 if option == "Subir imagen":
     uploaded_file = st.file_uploader("Elija una imagen...", type=["jpg", "jpeg", "png"])
     
-    if uploaded_file is not None:
+    if uploaded_file is not None and model is not None:
         # Leer la imagen original
         original_image = Image.open(uploaded_file)
         
         with col1:
-            st.image(original_image, caption="Imagen original", use_column_width=True)
+            st.image(original_image, caption="Imagen original", use_container_width=True)
         
-        # Convertir a formato OpenCV
-        image_cv = np.array(original_image)
-        image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
+        # Procesar imagen
+        detected_image, all_classes, req_detected = process_image(original_image)
         
-        # Realizar predicción
-        if model is not None:
-            results = model.predict(image_cv, imgsz=640)
-            
-            # Filtrar detecciones por clases seleccionadas
-            detected_classes = set()
-            filtered_results = []
-            
-            for r in results:
-                # Filtrar por clases requeridas
-                filtered_boxes = []
-                for box in r.boxes:
-                    if box.cls[0].item() in required_classes:
-                        filtered_boxes.append(box)
-                        detected_classes.add(int(box.cls[0].item()))
-                
-                # Reemplazar las cajas originales con las filtradas
-                r.boxes = filtered_boxes
-                filtered_results.append(r)
-            
-            # Mostrar imagen con detecciones
-            for r in filtered_results:
-                im_array = r.plot()  # imagen con las detecciones
-                im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
-                
-                with col2:
-                    st.image(im, caption="Resultado de la detección", use_column_width=True)
-            
-            # Evaluar cumplimiento de EPP
-            missing_classes = set(required_classes) - detected_classes
-            compliance_status = st.empty()
-            
-            if not missing_classes:
-                compliance_status.success("✅ El trabajador tiene el equipo de protección personal adecuado")
-            else:
-                missing_names = [CLASS_NAMES[class_id] for class_id in missing_classes]
-                compliance_status.error(f"❌ No apto. Faltan: {', '.join(missing_names)}")
+        with col2:
+            st.image(detected_image, caption="Todas las detecciones", use_container_width=True)
+        
+        # Evaluar cumplimiento de EPP
+        missing_classes = set(required_classes) - req_detected
+        compliance_status = st.empty()
+        
+        if not missing_classes:
+            compliance_status.success("✅ El trabajador tiene el equipo de protección personal adecuado")
+        else:
+            missing_names = [CLASS_NAMES[class_id] for class_id in missing_classes]
+            compliance_status.error(f"❌ No apto. Faltan: {', '.join(missing_names)}")
 
 else:  # Usar cámara
     picture = st.camera_input("Tome una foto")
     
-    if picture:
+    if picture and model is not None:
         # Leer la imagen de la cámara
         original_image = Image.open(picture)
         
         with col1:
-            st.image(original_image, caption="Imagen de la cámara", use_column_width=True)
+            st.image(original_image, caption="Imagen de la cámara", use_container_width=True)
         
-        # Convertir a formato OpenCV
-        image_cv = np.array(original_image)
-        image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
+        # Procesar imagen
+        detected_image, all_classes, req_detected = process_image(original_image)
         
-        # Realizar predicción
-        if model is not None:
-            results = model.predict(image_cv, imgsz=640)
-            
-            # Filtrar detecciones por clases seleccionadas
-            detected_classes = set()
-            filtered_results = []
-            
-            for r in results:
-                # Filtrar por clases requeridas
-                filtered_boxes = []
-                for box in r.boxes:
-                    if box.cls[0].item() in required_classes:
-                        filtered_boxes.append(box)
-                        detected_classes.add(int(box.cls[0].item()))
-                
-                # Reemplazar las cajas originales con las filtradas
-                r.boxes = filtered_boxes
-                filtered_results.append(r)
-            
-            # Mostrar imagen con detecciones
-            for r in filtered_results:
-                im_array = r.plot()  # imagen con las detecciones
-                im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
-                
-                with col2:
-                    st.image(im, caption="Resultado de la detección", use_column_width=True)
-            
-            # Evaluar cumplimiento de EPP
-            missing_classes = set(required_classes) - detected_classes
-            compliance_status = st.empty()
-            
-            if not missing_classes:
-                compliance_status.success("✅ El trabajador tiene el equipo de protección personal adecuado")
-            else:
-                missing_names = [CLASS_NAMES[class_id] for class_id in missing_classes]
-                compliance_status.error(f"❌ No apto. Faltan: {', '.join(missing_names)}")
+        with col2:
+            st.image(detected_image, caption="Todas las detecciones", use_container_width=True)
+        
+        # Evaluar cumplimiento de EPP
+        missing_classes = set(required_classes) - req_detected
+        compliance_status = st.empty()
+        
+        if not missing_classes:
+            compliance_status.success("✅ El trabajador tiene el equipo de protección personal adecuado")
+        else:
+            missing_names = [CLASS_NAMES[class_id] for class_id in missing_classes]
+            compliance_status.error(f"❌ No apto. Faltan: {', '.join(missing_names)}")
+
+        # Mostrar resumen de detecciones
+        st.subheader("Resumen de Detecciones")
+        detected_names = [CLASS_NAMES[class_id] for class_id in all_classes if class_id in CLASS_NAMES]
+        st.write(f"Elementos detectados: {', '.join(detected_names) if detected_names else 'Ninguno'}")
