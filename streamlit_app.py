@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 import tempfile
 import os
+import urllib.request
 from ultralytics import YOLO
+
 
 # Configuración de la página
 st.set_page_config(page_title="Detección de Objetos", layout="wide")
@@ -12,14 +14,27 @@ st.set_page_config(page_title="Detección de Objetos", layout="wide")
 # Título de la aplicación
 st.title("Detección de Objetos con YOLOv8")
 
-# Cargar el modelo (asegúrate de tener best.pt en el directorio correcto)
+MODEL_PATH = "model/best.pt"
+
 @st.cache_resource
 def load_model():
     try:
-        model = YOLO("/model/best.pt")
+        # Crear directorio si no existe
+        os.makedirs("model", exist_ok=True)
+        
+        # Descargar el modelo si no existe localmente
+        if not os.path.exists(MODEL_PATH):
+            with st.spinner('Descargando el modelo... Esto puede tomar unos minutos'):
+                urllib.request.urlretrieve(MODEL_PATH)
+                st.success("Modelo descargado exitosamente!")
+        
+        # Cargar el modelo
+        model = YOLO(MODEL_PATH)
+        st.success("Modelo cargado exitosamente!")
         return model
+    
     except Exception as e:
-        st.error(f"No se pudo cargar el modelo: {e}")
+        st.error(f"No se pudo cargar el modelo: {str(e)}")
         return None
 
 model = load_model()
