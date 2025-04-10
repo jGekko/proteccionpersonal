@@ -64,8 +64,10 @@ with left_col:
     st.subheader("🛡️ Elementos Requeridos")
     required_classes = []
     for class_id, class_name in CLASS_NAMES.items():
-        if st.checkbox(class_name, value=True, key=f"class_{class_id}"):
-            required_classes.append(class_id)
+        # No mostramos la opción de persona ya que siempre se detectará
+        if class_id != 2:  # 2 es el ID de persona
+            if st.checkbox(class_name, value=True, key=f"class_{class_id}"):
+                required_classes.append(class_id)
 
     if option == "📤 Subir imagen":
         uploaded_file = st.file_uploader("🖼️ Seleccione imagen:", type=["jpg", "jpeg", "png"])
