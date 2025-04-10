@@ -15,7 +15,7 @@ st.title("Sistema de Detección de Equipo de Protección Personal")
 # Configuración del modelo
 MODEL_PATH = "model/best.pt"
 CLASS_NAMES = {0: "Casco", 1: "Zapatos", 2: "Persona", 3: "Chaleco"}
-MAX_IMAGE_SIZE = 450  # Tamaño máximo para las imágenes
+MAX_IMAGE_SIZE = 300  # Tamaño máximo para las imágenes
 
 @st.cache_resource
 def load_model():
