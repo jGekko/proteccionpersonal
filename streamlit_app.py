@@ -15,7 +15,7 @@ st.title("🚨 Sistema de Detección de Equipo de Protección Personal")
 # Configuración del modelo
 MODEL_PATH = "model/best.pt"
 CLASS_NAMES = {0: "⛑️ Casco", 1: "👞 Zapatos", 2: "👤 Persona", 3: "🦺 Chaleco"}
-DISPLAY_WIDTH = 200  # Ancho de visualización sin perder calidad
+DISPLAY_WIDTH = 300  # Ancho de visualización sin perder calidad
 
 @st.cache_resource
 def load_model():
