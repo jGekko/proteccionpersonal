@@ -10,7 +10,7 @@ from ultralytics import YOLO
 st.set_page_config(page_title="Detección de EPP", layout="wide")
 
 # Título de la aplicación
-st.title("Sistema de Detección de Equipo de Protección Personal")
+st.title("🚨 Sistema de Detección de Equipo de Protección Personal")
 
 # Configuración del modelo
 MODEL_PATH = "model/best.pt"
@@ -64,7 +64,7 @@ left_col, right_col = st.columns([1, 2])
 
 # Columna izquierda: Configuración
 with left_col:
-    st.header("Configuración")
+    st.header("⚙️ Configuración")
     
     # Selección de fuente de imagen
     option = st.radio("Seleccione fuente de imagen:", 
@@ -72,7 +72,7 @@ with left_col:
                      index=0)
     
     # Selector de EPP requerido
-    st.subheader("Elementos de Protección Requeridos")
+    st.subheader("🦺 Elementos de Protección Requeridos")
     required_classes = []
     for class_id, class_name in CLASS_NAMES.items():
         if st.checkbox(class_name, value=True, key=f"class_{class_id}"):
@@ -88,7 +88,7 @@ with left_col:
 
 # Columna derecha: Resultados
 with right_col:
-    st.header("Resultados del Análisis")
+    st.header("👷 Resultados del Análisis")
     
     if (uploaded_file is not None or (option == "Usar cámara" and picture is not None)) and model is not None:
         # Obtener la imagen según la fuente seleccionada
@@ -120,7 +120,7 @@ with right_col:
                    use_container_width=True)
         
         # Resumen de detecciones
-        st.subheader("Resumen de Detecciones")
+        st.subheader("📊 Resumen de Detecciones")
         detected_names = [CLASS_NAMES[c] for c in all_classes if c in CLASS_NAMES]
         st.write(f"**Elementos detectados:** {', '.join(detected_names) if detected_names else 'Ninguno'}")
         st.write(f"**Elementos requeridos detectados:** {', '.join([CLASS_NAMES[c] for c in req_detected]) if req_detected else 'Ninguno'}")
