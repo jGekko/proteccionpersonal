@@ -20,5 +20,5 @@ Accede a la aplicación en:
 
 ## Capturas
 
-![Detección exitosa](./imagenes/deteccion1.png)
-![Violación de normas](./imagenes/deteccion2.png)
+![Detección exitosa](./imagenes/snapEPP1.png)
+![Violación de normas](./imagenes/snapEPP2.png)
