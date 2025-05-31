@@ -13,12 +13,12 @@ Mediante el uso de modelos de visión por computadora, la app analiza la presenc
 - Clasificación visual de cumplimiento
 - Interfaz simple y accesible vía web
 
-## Capturas
-
-![Detección exitosa](./imagenes/deteccion1.png)
-![Violación de normas](./imagenes/deteccion2.png)
-
 ## Demo
 
 Accede a la aplicación en:  
 [https://protpers.streamlit.app/](https://protpers.streamlit.app/)
+
+## Capturas
+
+![Detección exitosa](./imagenes/deteccion1.png)
+![Violación de normas](./imagenes/deteccion2.png)
